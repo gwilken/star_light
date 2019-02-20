@@ -6,7 +6,7 @@ const mongo = {
   db: null,
   collection: null,
 
-  connect: function () {
+  connect: () => {
       return MongoClient.connect(`mongodb://${config.db.host}:${config.db.port}`, { useNewUrlParser: true }, (err, client) => {
         try {
           mongo.db = client.db(config.db.name)
@@ -18,8 +18,12 @@ const mongo = {
       })
   },
 
-  insert: function (doc) {
+  insert: (doc) => {
     return mongo.collection.insertOne(doc)
+  },
+
+  find: (email) => {
+    return mongo.collection.findOne({"email": email})
   }
 }
 
