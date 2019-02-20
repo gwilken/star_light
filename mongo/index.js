@@ -11,9 +11,9 @@ const mongo = {
         try {
           mongo.db = client.db(config.db.name)
           mongo.collection = mongo.db.collection(config.db.collection)
-          console.log('[ MONGO] - Connected.')
+          console.log('[ MONGO ] - Connected.')
         } catch(err) {
-          console.log('[ ERROR ] - Error connecting to Mongo', err)
+          console.log('[ MONGO ] - Error connecting to Mongo', err)
         }
       })
   },
@@ -22,7 +22,7 @@ const mongo = {
     return mongo.collection.insertOne(doc)
   },
 
-  find: (email) => {
+  findUser: (email) => {
     return mongo.collection.findOne({"email": email})
   }
 }

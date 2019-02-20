@@ -18,7 +18,7 @@ app.use(routes)
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-console.log('[ SERVER ] - Is Production?', isProduction)
+console.log('[ SERVER ] - Production check:', isProduction)
 
 mongo.connect()
 

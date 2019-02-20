@@ -59,7 +59,7 @@ router.post('/validate', jsonParser, async (req, res) => {
     })
   }
 
-  let dbUser = await mongo.find(user.email)
+  let dbUser = await mongo.findUser(user.email)
 
   console.log(dbUser)
 
