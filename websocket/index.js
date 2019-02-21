@@ -9,7 +9,7 @@ const createSocketServer = (req, res, next) => {
   wss.on('connection', client => {
     client.on('message', message => {
       console.log('received: %s', message);
-      
+
     });
    
     //ws.send('something');

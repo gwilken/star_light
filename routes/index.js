@@ -85,7 +85,8 @@ router.post('/test',
   (req, res) => {
     res.json({
       "status": "howdy!",
-      "port" : req.body.port
+      "port" : req.body.port,
+      "user": req.user
     })
   });
 
