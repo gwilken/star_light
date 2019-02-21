@@ -1,23 +1,16 @@
 const passport = require('passport');
-const BasicStrategy = require('passport-http').BasicStrategy;
+const JWTStrategy = require('passport-jwt').Strategy;
+const ExtractJWT = require('passport-jwt').ExtractJwt;
 
-passport.use(new BasicStrategy (
-  function(username, password, done) {
-    //JUST TESTING...
-    if(username === 'greg' && password == 'greg') {
-      return done(null, 'greg')
-    } else {
-      return done(null, false, { message: 'Incorrect creds.' })
-    }
+passport.use(new JWTStrategy({
+  secretOrKey : 'coldbeer',
+  jwtFromRequest : ExtractJWT.fromUrlQueryParameter('token')
+}, async (token, done) => {
+  try {
+    return done(null, token.email);
+  } catch (error) {
+    done(error);
   }
-))
-
-passport.serializeUser(function(user, done) {
-  done(null, user);
-});
-
-passport.deserializeUser(function(user, done) {
-  done(null, user);
-});
+}));
 
 module.exports = passport;
