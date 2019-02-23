@@ -27,8 +27,11 @@ wss.on('connection', (client, req) => {
     } else {
         console.log('[ WEBSOCKET ] - No valid token, closing client.')
         client.close();
-    }
-  }
+    } 
+  } else {
+      console.log('[ WEBSOCKET ] - No valid token, closing client.')
+      client.close();
+  } 
 
   client.on('message', message => {
     if(validated) {
