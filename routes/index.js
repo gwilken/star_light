@@ -2,19 +2,17 @@
 const router = require('express').Router();
 const bodyParser = require('body-parser')
 const jsonParser = bodyParser.json();
-const passport = require('../auth');
+const passport = require('../auth/passport');
+const token = require('../auth/token');
 const mongo = require('../mongo');
-const userSchema = require('../models/userSchema');
-const jwt = require('jsonwebtoken');
-const socketServer = require('../websocket');
 
-router.post('/register', jsonParser, async (req, res) => {
+router.post('/registeruser', jsonParser, async (req, res) => {
   let user = req.body;
 
-  if (!user.email) {
+  if (!user.username) {
     res.status(422).json({
       errors: {
-        email: 'is required',
+        username: 'is required',
       },
     })
   }
@@ -28,66 +26,74 @@ router.post('/register', jsonParser, async (req, res) => {
   }
 
   let newUser = {
-    email: user.email,
-    password: await userSchema.createPassword(user.password) 
+    username: user.username,
+    password: await mongo.createPassword(user.password) 
   }
 
   let result = await mongo.insert(newUser)
 
   if (result.result.ok) {
-    console.log('[ ROUTES ] - User registerd:', newUser.email)
+    console.log('[ ROUTES ] - User registerd:', newUser.username)
     res.status(200).json({"status": "registered"})
   } else {
     res.status(500)
   }
 })
 
-router.post('/validate', jsonParser, async (req, res) => {
+router.post('/gettoken', jsonParser, async (req, res) => {
+  let host = req.get('host')
   let user = req.body;
 
-  if (!user.email) {
+  if (!user.username) {
     res.status(422).json({
-      errors: {
-        email: 'is required',
-      },
+      error: 'username is required'
     })
   }
 
   if (!user.password) {
     res.status(422).json({
-      errors: {
-        password: 'is required',
-      },
+      error: 'password is required'
     })
   }
 
-  let dbUser = await mongo.findUser(user.email)
+  let dbUser = await mongo.findUser(user.username)
 
-  let isValid = await userSchema.validatePassword(user.password, dbUser.password) 
+  if (dbUser) {
+    let isValid = await mongo.validatePassword(user.password, dbUser.password) 
+
+    if (isValid) {
+      const newToken = token.generateJWT(user.username, host)
+      res.json({ "token" : newToken })
+    } else {
+      res.sendStatus(403)
+    }
+  }  
   
-  //console.log(dbUser, isValid)
-
-  if (isValid) {
-    const token = jwt.sign({
-      exp: Math.floor((Date.now() / 1000) + 60),
-      email: user.email
-    }, 'coldbeer');
-    res.json({ token })
-  } else {
-    res.sendStatus(403)
-  }
+  res.sendStatus(403)
 })
 
 router.post('/test',
   passport.authenticate('jwt', { session: false }),
   jsonParser,
-  socketServer,
   (req, res) => {
     res.json({
       "status": "howdy!",
-      "port" : req.body.port,
-      "user": req.user
+      "token": req.token
     })
   });
+  
+router.post('/test2',
+  jsonParser,
+  (req, res) => {
+    console.log('host:', req.get('host'))
+
+    console.log('Valid token?:', token.verify(req.body.token))
+
+    res.json({
+      "status": "howdy!",
+      "token": req.body.token
+    })
+  });
+
 
 module.exports = router

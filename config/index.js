@@ -13,6 +13,10 @@ const config = {
   redis: {
     port: 6379,
     host: 'localhost',
+  },
+  ws: {
+    port: 9000,
+    strictOriginChecking: true
   }
 }
 

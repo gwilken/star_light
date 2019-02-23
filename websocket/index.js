@@ -1,21 +1,39 @@
 const WebSocket = require('ws');
+const config = require('../config')
+const token = require('../auth/token.js');
 
-const createSocketServer = (req, res, next) => {  
-  let { port } = req.body
+const wss = new WebSocket.Server({ port: config.ws.port });
+console.log('[ WEBSOCKET ] - Server up:', config.ws.port)
 
-  const wss = new WebSocket.Server({ port });
-  console.log('[ WEBSOCKET ] - Server on:', port)
+wss.on('connection', (client, req) => {
+  let validated = false;
+  let wsOrigin = req.headers.origin
+  let wsToken = token.getTokenFromQueryParam(req.url)
 
-  wss.on('connection', client => {
-    client.on('message', message => {
-      console.log('received: %s', message);
+  if (wsToken) {
+    let decodedToken = token.verify(wsToken)
+    
+    if (decodedToken) {
+      if (config.ws.strictOriginChecking && (decodedToken.origin !== wsOrigin)) {
+        console.log('[ WEBSOCKET ] - Token and Websocket client not same origin!')
+        console.log('[ WEBSOCKET ] - Closing client:', wsOrigin)
+        client.close();
+      } else {
+        validated = true
+        console.log('[ WEBSOCKET ] - Client validated:', decodedToken.username, wsOrigin)
+      }
+    } else {
+        console.log('[ WEBSOCKET ] - No valid token, closing client.')
+        client.close();
+    }
+  }
 
-    });
-   
-    //ws.send('something');
+  client.on('message', message => {
+    if(validated) {
+      console.log('VALIDATED?', validated)
+      console.log('MESSAGE', message)
+    }
   });
-
-  next()
-}
-
-module.exports = createSocketServer;
+  
+  //ws.send('something');
+});

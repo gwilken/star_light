@@ -1,2 +1,2 @@
 package-lock.json
-auth/credentials.js
+auth/secret.js
