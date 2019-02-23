@@ -63,9 +63,9 @@ router.post('/gettoken', jsonParser, async (req, res) => {
     } else {
       res.sendStatus(403)
     }
-  }  
-  
-  res.sendStatus(403)
+  } else {
+    res.sendStatus(403)
+  }
 })
 
 router.post('/test',

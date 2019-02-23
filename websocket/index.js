@@ -16,6 +16,8 @@ wss.on('connection', (client, req) => {
     let decodedToken = token.verify(wsToken)
     
     if (decodedToken) {
+      console.log('[ WEBSOCKET ] - Valid token received.')
+
       if (config.ws.strictOriginChecking && (decodedToken.origin !== wsOrigin)) {
         console.log('[ WEBSOCKET ] - Token and Websocket client not same origin!')
         console.log('[ WEBSOCKET ] - Closing client:', wsOrigin)

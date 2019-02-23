@@ -25,7 +25,7 @@ const mongo = {
 
   findUser: async (user) => {
     let dbUser =  await mongo.collection.findOne({"username": user})
-    console.log('[ MONGO ] - User found:', dbUser)
+    console.log('[ MONGO ] - User found:', dbUser.username)
     return dbUser
   },
 
@@ -36,7 +36,7 @@ const mongo = {
 
   validatePassword: async (password, userPassword) => {
     const compare = await bcrypt.compare(password, userPassword);
-    console.log('[ MONGO ] - Password valid?', compare)
+    console.log('[ MONGO ] - Password authenticated:', compare)
     return compare;
   }
 }
