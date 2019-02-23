@@ -11,17 +11,13 @@ router.post('/registeruser', jsonParser, async (req, res) => {
 
   if (!user.username) {
     res.status(422).json({
-      errors: {
-        username: 'is required',
-      },
+      error: 'username is required',
     })
   }
 
   if (!user.password) {
     res.status(422).json({
-      errors: {
-        password: 'is required',
-      },
+      error: 'password is required',
     })
   }
 
