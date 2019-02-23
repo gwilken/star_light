@@ -15,7 +15,7 @@ const config = {
     host: 'localhost',
   },
   ws: {
-    port: 9000,
+    port: 9090,
     strictOriginChecking: true
   }
 }

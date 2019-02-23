@@ -8,6 +8,8 @@ console.log('[ WEBSOCKET ] - Server up:', config.ws.port)
 wss.on('connection', (client, req) => {
   let validated = false;
   let wsOrigin = req.headers.origin
+  
+  console.log('[ WEBSOCKET ] - Client attempting to connect:', wsOrigin)
   let wsToken = token.getTokenFromQueryParam(req.url)
 
   if (wsToken) {
