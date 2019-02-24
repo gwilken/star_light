@@ -3,13 +3,14 @@ const secret = require('./secret');
 
 const token = {
   generateJWT: (username, host) => {
+    let now =  Math.floor(Date.now() / 1000);
     let token = jwt.sign({
       username: username,
       origin: host,
-      exp: Math.floor((Date.now() / 1000) + (60 * 60)),
+      exp: now + (60 * 60),
     }, secret);
 
-    console.log('[ TOKEN ] - JWT generated for:', username, host)
+    console.log(`[ TOKEN ] - JWT generated for ${username}@${host} at ${now}`)
     return token;
   },
 
