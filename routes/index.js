@@ -5,7 +5,8 @@ const jsonParser = bodyParser.json();
 const passport = require('../auth/passport');
 const token = require('../auth/token');
 const mongo = require('../mongo');
-const { checkForUserAndPass } = require('./middleware');
+const log = require('../utils/log');
+const { checkForUserAndPass, validateUser } = require('./middleware');
 
 router.post('/registeruser', 
   jsonParser, 
@@ -16,7 +17,7 @@ router.post('/registeruser',
     let insertRes = await mongo.insert(newUser)
 
     if (insertRes.result.ok) {
-      console.log('[ ROUTES ] - User registerd:', newUser.username)
+      log('[ ROUTES ] - User registerd:', newUser.username)
       res.status(200).json({"status": "registered"})
     } else {
       res.status(500)
@@ -26,47 +27,42 @@ router.post('/registeruser',
 router.post('/gettoken', 
   jsonParser, 
   checkForUserAndPass,
+  validateUser,
   async (req, res) => {
     let host = req.get('host')
-    let { username, password } = req.body;
-
-    let dbUser = await mongo.findUser(username)
-
-    if (dbUser) {
-      let isValid = await mongo.validatePassword(password, dbUser.password) 
-
-      if (isValid) {
-        const newToken = token.generateJWT(username, host)
-        res.json({ "token" : newToken })
-      } else {
-        res.sendStatus(403)
-      }
-    } else {
-      res.sendStatus(403)
-    }
+    let { username } = req.body;
+    const newToken = await token.generateJWT(username, host)
+    res.json({ "token" : newToken })  
 })
 
-router.post('/test',
+router.get('/test',
   passport.authenticate('jwt', { session: false }),
   jsonParser,
   (req, res) => {
     res.json({
       "status": "howdy!",
-      "token": req.token
+      "token": req.user
     })
   });
   
-router.post('/test2',
+router.post('/verifytoken',
   jsonParser,
-  (req, res) => {
-    console.log('host:', req.get('host'))
+  async (req, res) => {
+  
+    try {
+      let verifiedToken = await token.verify(req.body.token)
 
-    console.log('Valid token?:', token.verify(req.body.token))
+      res.json({
+        "status": "howdy!",
+        "token": verifiedToken
+      })
+    }
 
-    res.json({
-      "status": "howdy!",
-      "token": req.body.token
-    })
+    catch (err) {
+      res.json({
+        "error": err
+      })
+    }
   });
 
 

@@ -13,10 +13,6 @@ app.use(bodyParser.json());
 app.use(passport.initialize());
 app.use(routes)
 
-const isProduction = process.env.NODE_ENV === 'production';
-
-console.log('[ APP ] - Production check:', isProduction)
-
 mongo.connect()
 
 app.listen(config.app.port, function() {

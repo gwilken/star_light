@@ -1,5 +1,4 @@
 // config/index.js
-
 const config = {
   app: {
     port: 8000
@@ -17,6 +16,9 @@ const config = {
   ws: {
     port: 9090,
     strictOriginChecking: true
+  },
+  tokens: {
+    expire: 60 
   }
 }
 

@@ -1,45 +1,71 @@
 const jwt = require('jsonwebtoken');
 const secret = require('./secret');
+const log = require('../utils/log');
 
 const token = {
   generateJWT: (username, host) => {
-    let now =  Math.floor(Date.now() / 1000);
-    let token = jwt.sign({
-      username: username,
-      origin: host,
-      exp: now + (60 * 60),
-    }, secret);
+    return new Promise((resolve, reject) => {
+      try {
+        let now =  Math.floor(Date.now() / 1000);
+        let token = jwt.sign({
+          username: username,
+          origin: host,
+          exp: now + (60 * 60),
+         // exp: now + (60),
+        }, secret);
 
-    console.log(`[ TOKEN ] - JWT generated for ${username}@${host} at ${now}`)
-    return token;
+        log(`[ TOKEN ] - JWT generated for ${username}@${host} at ${now}`)
+        resolve(token);
+      }
+      catch (err) {
+        log(`[ TOKEN ] - Error: Can\'t generate token.`)
+        reject(err)
+      }
+    })
   },
 
   verify: (token) => {
-    try {
-      let res = jwt.verify(token, secret)
-      return res
-    } catch(err) {
-      console.log('[ TOKEN ] - Invalid token.')
-      return null
-    }
+    return new Promise((resolve, reject) => {
+      try {
+        let res = jwt.verify(token, secret)
+        resolve(res)
+      } catch(err) {
+        log('[ TOKEN ] - Error: Token not verfied.')
+        reject(err)
+      }
+    })
   },
 
   getTokenFromQueryParam: (str) => {
-    try {
-      let wsToken = str.split('/?token=')[1]
-      return wsToken
-    } catch (err) {
-      console.log('[ TOKEN ] - Error deriving token from websocket param.')
-      return null
-    }
+    return new Promise((resolve, reject) => {
+      try {
+        let wsToken = str.split('/?token=')[1]
+        resolve(wsToken)
+      } catch (err) {
+        log('[ TOKEN ] - Error: Can\'t get token from paramater.')
+        reject(err)
+      }
+    })
   },
 
-  toAuthJSON: (_id, username) => {
-    return {
-      _id: _id,
-      username: username,
-      token: this.generateJWT(),
-    };
+  validateTokenOrigin: (tokenStr, origin) => {
+    return new Promise((resolve, reject) => {
+      try {
+        if (tokenStr) {
+          if (tokenStr.origin === origin) {
+            log('[ TOKEN ] - Origin validated.')
+            resolve(true);
+          } else {
+            throw "Token origin mismatch."
+          }
+        } else throw "No valid token." 
+      } 
+      
+      catch (err) {
+        log('[ TOKEN ] - Error:', err)
+        reject(err)
+      }
+    })
   }
 }
 

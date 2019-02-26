@@ -5,42 +5,35 @@ const token = require('../auth/token.js');
 const wss = new WebSocket.Server({ port: config.ws.port });
 console.log('[ WEBSOCKET ] - Server up:', config.ws.port)
 
-wss.on('connection', (client, req) => {
+const closeConnection = (client) => {
+  console.log('[ WEBSOCKET ] - Closing client.')
+  client.close()
+}
+
+wss.on('connection', async (client, req) => {
+  let wsOrigin = req.headers.origin;
   let validated = false;
-  let wsOrigin = req.headers.origin
-  
+
   console.log('[ WEBSOCKET ] - Client attempting to connect:', wsOrigin)
-  let wsToken = token.getTokenFromQueryParam(req.url)
-
-  if (wsToken) {
-    let decodedToken = token.verify(wsToken)
-    
-    if (decodedToken) {
-      console.log('[ WEBSOCKET ] - Valid token received.')
-
-      if (config.ws.strictOriginChecking && (decodedToken.origin !== wsOrigin)) {
-        console.log('[ WEBSOCKET ] - Token and Websocket client not same origin!')
-        console.log('[ WEBSOCKET ] - Closing client:', wsOrigin)
-        client.close();
-      } else {
-        validated = true
-        console.log('[ WEBSOCKET ] - Client validated:', decodedToken.username, wsOrigin)
-      }
-    } else {
-        console.log('[ WEBSOCKET ] - No valid token, closing client.')
-        client.close();
-    } 
-  } else {
-      console.log('[ WEBSOCKET ] - No valid token, closing client.')
-      client.close();
-  } 
-
-  client.on('message', message => {
-    if(validated) {
-      console.log('VALIDATED?', validated)
-      console.log('MESSAGE', message)
-    }
-  });
   
-  //ws.send('something');
+  try {
+    let wsToken = await token.getTokenFromQueryParam(req.url)
+    let verifiedToken = await token.verify(wsToken) 
+   // validated = await token.validateTokenOrigin(verifiedToken, wsOrigin);
+    validated = true
+  
+  }
+
+  catch (err) {
+    closeConnection(client);
+  }
+
+  if (validated) {
+    console.log('[ WEBSOCKET ] - Client validated:', wsOrigin)
+
+    client.on('message', message => {
+      
+      client.send(message)
+    });
+  }
 });

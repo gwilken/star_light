@@ -7,8 +7,9 @@ passport.use(new JWTStrategy({
   secretOrKey : secret,
   jwtFromRequest : ExtractJWT.fromUrlQueryParameter('token')
 }, async (token, done) => {
+  console.log(token)
   try {
-    return done(null, token.username);
+    return done(null, token);
   } catch (error) {
     console.log(error)
     done(error);
