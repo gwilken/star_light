@@ -35,35 +35,39 @@ router.post('/gettoken',
     res.json({ "token" : newToken })  
 })
 
+
 router.get('/test',
-  passport.authenticate('jwt', { session: false }),
-  jsonParser,
-  (req, res) => {
+passport.authenticate('jwt', { session: false }),
+jsonParser,
+(req, res) => {
+  res.json({
+    "status": "howdy!",
+    "token": req.user
+  })
+});
+
+router.post('/verifytoken',
+jsonParser,
+async (req, res) => {
+  
+  try {
+    let verifiedToken = await token.verify(req.body.token)
+    
     res.json({
       "status": "howdy!",
-      "token": req.user
+      "token": verifiedToken
     })
-  });
+  }
   
-router.post('/verifytoken',
-  jsonParser,
-  async (req, res) => {
-  
-    try {
-      let verifiedToken = await token.verify(req.body.token)
+  catch (err) {
+    res.json({
+      "error": err
+    })
+  }
+});
 
-      res.json({
-        "status": "howdy!",
-        "token": verifiedToken
-      })
-    }
-
-    catch (err) {
-      res.json({
-        "error": err
-      })
-    }
-  });
-
+router.get('/ping', (req, res) => {
+  res.send('pong')
+})
 
 module.exports = router
