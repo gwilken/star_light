@@ -67,7 +67,8 @@ async (req, res) => {
 });
 
 router.get('/ping', (req, res) => {
-  res.send('pong')
+  console.log('PONG', req.get('host'))
+  res.send('PONG')
 })
 
 module.exports = router
