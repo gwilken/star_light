@@ -5,7 +5,7 @@ const mongo = require('./mongo');
 const config = require('./config')
 const passport = require('./auth/passport');
 require('./websocket');
-require('./redis');
+//require('./redis');
 
 const app = express()
 app.use(bodyParser.urlencoded({ extended: false }));
