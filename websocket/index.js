@@ -2,6 +2,7 @@ const WebSocket = require('ws');
 const config = require('../config')
 const token = require('../auth/token.js');
 const RedisSub = require('../redis/RedisSubscriber')
+const redis = require('redis')
 
 const wss = new WebSocket.Server({ port: config.ws.port });
 console.log('[ WEBSOCKET ] - Server up:', config.ws.port)
@@ -12,7 +13,78 @@ const closeConnection = (client) => {
   client.close()
 }
 
-wss.on('connection', async (client, req) => {
+const parseMessage = (str, wsClient, redisClient) => {
+  try {
+    let json = JSON.parse(str) || {}
+
+    switch (json.message.type) {
+      case 'subscribeToKey':
+        if (json.message.key) {
+          let redisSubKey = new RedisSub()
+
+          redisSubKey.subscribeToKey(json.message.key);
+
+          redisSubKey.onKeyChange( (key, event) => {
+            redisClient.get(key, (err, value) => {
+              if(!err) {
+                
+                let data = {
+                  message: {
+                    key,
+                    event,
+                    value,
+                    timestamp: Date.now(),
+                    type: 'keyChanged',
+                  }
+                }
+                
+                wsClient.send(JSON.stringify(data))
+
+              } else {
+                throw err
+              }
+
+            })
+
+          })
+        }
+        break;
+      
+      case 'subscribeToEvent':
+        if(json.message.event) {
+          let redisSubEvent = new RedisSub()
+
+          redisSubEvent.subscribeToEvent(json.message.event)
+          
+          redisSubEvent.onEventChange( (event, key) => {
+            wsClient.send(`${event}, ${key}`)
+
+          })
+
+        }
+    }
+
+  } catch (err) {
+    console.log('err parsing json')
+  }
+}
+
+
+const subscribeToKey = (key) => {
+  let redisSub = new RedisSub()
+
+  redisSub.subscribeToKey('ztest');
+  redisSub.subscribeToEvent('zadd');
+
+  redisSub.onEventChange((event, key) => {
+    console.log('event', event, 'key', key)
+  } )
+}
+
+
+
+
+wss.on('connection', async (wsClient, req) => {
   let wsOrigin = req.headers.origin;
   let validated = false;
 
@@ -31,18 +103,12 @@ wss.on('connection', async (client, req) => {
 
   if (validated) {
     console.log('[ WEBSOCKET ] - Client validated:', wsOrigin)
-    let redisSub = new RedisSub()
     
-    redisSub.subscribeToKey('ztest');
-    redisSub.subscribeToEvent('zadd');
+    let redisClient = redis.createClient(config.redis.port, config.redis.host)
 
-    redisSub.onKeyChange((key, event) => {
-      console.log('key', key, 'event', event)
-    } )
- 
-    // redisSub.onEventChange((event, key) => {
-    //   console.log('event', event, 'key', key)
-    // } )
-
+    wsClient.on('message', (msg) => {
+      parseMessage(msg, wsClient, redisClient)
+    })
+    
   }
 });

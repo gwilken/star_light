@@ -1,6 +1,6 @@
 // redis/index.js
 const redis = require('redis')
-const config = require('../config/index.js')
+const config = require('../config')
 
 class RedisPublisher {
   constructor() {

@@ -1,6 +1,6 @@
 // redis/index.js
 const redis = require('redis')
-const config = require('../config/index.js')
+const config = require('../config')
 
 class RedisSubscriber {
   constructor() {
@@ -33,12 +33,10 @@ class RedisSubscriber {
   }
 
   handleKeyChange (key, event) {
-    //console.log('handleKeyChange:', key, event)
     this.keyChangeCb(key, event)
   }
 
   handleEventChange (event, key) {
-    //console.log('handleEventChange:', event, key)
     this.eventChangeCb(event, key)
   }
 
@@ -49,7 +47,6 @@ class RedisSubscriber {
   onEventChange(cb) {
     this.eventChangeCb = cb
   }
-
 }
 
 module.exports = RedisSubscriber;
