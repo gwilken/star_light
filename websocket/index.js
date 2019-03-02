@@ -7,11 +7,13 @@ const redis = require('redis')
 const wss = new WebSocket.Server({ port: config.ws.port });
 console.log('[ WEBSOCKET ] - Server up:', config.ws.port)
 
+
 const closeConnection = (client) => {
   console.log('[ WEBSOCKET ] - Closing client.')
   client.send('Client not validated. Closing connection.')
   client.close()
 }
+
 
 const parseMessage = (str, wsClient, redisClient) => {
   try {
@@ -39,17 +41,75 @@ const parseMessage = (str, wsClient, redisClient) => {
                 }
                 
                 wsClient.send(JSON.stringify(data))
-
               } else {
                 throw err
               }
-
             })
-
           })
         }
-        break;
+      break;
       
+      case 'subscribeToTimeSeries':
+      console.log('subscribeToTimeSeries')
+        if (json.message.key) {
+          try {
+            let redisSubTimeseries = new RedisSub()
+
+            redisSubTimeseries.subscribeToKey(json.message.key);
+
+            redisSubTimeseries.onKeyChange( (key, event) => {
+            
+              redisClient.zrange(key, -1, -1, 'WITHSCORES', (err, val) => {
+                let [hashkey, keyAsTimestamp] = val
+                console.log('timestamp:', keyAsTimestamp, 'hashkey:', hashkey) 
+              
+                redisClient.hgetall(hashkey, (err, hashVal) => {
+                  console.log('hash:', hashVal)
+
+                  let data = {
+                    message: {
+                      key,
+                      event,
+                      hashkey,
+                      hashVal,
+                      keyAsTimestamp,
+                      timestamp: Date.now(),
+                      type: 'subscribeToTimeSeries',
+                    }
+                  }
+                  
+                  wsClient.send(JSON.stringify(data))
+
+                })
+              })
+
+              // redisClient.hmgetall(key, (err, value) => {
+              //   if(!err) {
+                  
+              //     console.log(value)
+
+                  // let data = {
+                  //   message: {
+                  //     key,
+                  //     event,
+                  //     value,
+                  //     timestamp: Date.now(),
+                  //     type: 'keyChanged',
+                  //   }
+                  // }
+                  
+                  // wsClient.send(JSON.stringify(data))
+              //   } else {
+              //     throw err
+              //   }
+              // })
+            })
+          } catch (err) {
+            console.log('[ WEBSOCKET ] - Error subscribeToTimeSeries:', err)
+          }
+        }
+      break;
+
       case 'subscribeToEvent':
         if(json.message.event) {
           let redisSubEvent = new RedisSub()
