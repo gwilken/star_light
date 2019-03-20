@@ -64,7 +64,7 @@ router.post('/devicedata',
 //validateDevice,
 //jsonParser, 
 (req, res) => {
-  console.log(req.body)
+  console.log(req)
 
   res.json('ok')
 })
