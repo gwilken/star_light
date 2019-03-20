@@ -62,7 +62,7 @@ router.get('/ping', (req, res) => {
 
 router.post('/devicedata',
 //validateDevice,
-jsonParser, 
+//jsonParser, 
 (req, res) => {
   console.log(req.body)
 
