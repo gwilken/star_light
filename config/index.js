@@ -1,7 +1,7 @@
 // config/index.js
 const config = {
   app: {
-    port: 8000
+    port: 4000
   },
   db: {
     name: 'starlight',
@@ -14,7 +14,7 @@ const config = {
     host: 'localhost',
   },
   ws: {
-    port: 9090,
+    port: 4040,
     strictOriginChecking: true
   },
   tokens: {

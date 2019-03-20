@@ -25,11 +25,24 @@ const mongo = {
   },
 
   findUser: async (user) => {
-    let dbUser =  await mongo.collection.findOne({"username": user})
-    if(dbUser) {
+    mongo.collection = mongo.collection = mongo.db.collection('users')
+
+    let dbUser = await mongo.collection.findOne({"username": user})
+    if (dbUser) {
       log('[ MONGO ] - User found:', dbUser.username)
     }
     return dbUser
+  },
+  
+  findDevice: async (id) => {
+    mongo.collection = mongo.collection = mongo.db.collection('devices')
+    let device = await mongo.collection.findOne({"deviceId": id})
+    if (device) {
+      log('[ MONGO ] - Device found:', device.deviceId)
+    } else {
+      log('[ MONGO ] - Device not found.')
+    }
+    return device
   },
 
   createPassword: async (password) => {
@@ -39,7 +52,13 @@ const mongo = {
 
   validatePassword: async (password, userPassword) => {
     const compare = await bcrypt.compare(password, userPassword);
-    log('[ MONGO ] - Password authenticated:', compare)
+    
+    if (compare) {
+      log('[ MONGO ] - Password authenticated.')
+    } else {
+      log('[ MONGO ] - Password not authenticated.')
+    }
+    
     return compare;
   }
 }

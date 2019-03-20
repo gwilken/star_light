@@ -1,6 +1,6 @@
-const log = (str) => {
+const log = (str, args) => {
   if (process.env.NODE_ENV !== 'production') {
-    console.log(str)
+    console.log(str, args ? args : '')
   }
 }
 
