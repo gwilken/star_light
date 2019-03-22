@@ -1,6 +1,8 @@
 const mongo = require('../mongo');
 const token = require('../auth/token');
 const log = require('../utils/log');
+const redis = require('redis')
+const config = require('../config')
 
 const addDevice = async (req, res, next) => { 
   let { deviceId, key } = req.body;
@@ -103,4 +105,39 @@ const sendToken = async (req, res, next) => {
   res.json({ "token" : newToken })  
 }
 
-module.exports = { addDevice, addUser, checkForUserAndPass, validateUser, validateDevice, sendToken }
+const parseDeviceData = (req, res, next) => {
+  let redisClient = redis.createClient(config.redis.port, config.redis.host)
+  
+  try {
+    let { data } = req.body || {}
+
+    Object.keys(data).forEach(key => {
+      Object.entries(data[key]).forEach(entry => {
+        
+        let [ groupKey, val ] = entry
+
+        if (groupKey === 'redis') {
+          let { hashkey, set } = data[key]['redis']
+
+          if (hashkey) {
+            let { redis, ...objNoRedis } = data[key]
+            redisClient.hmset(hashkey, objNoRedis)
+          }
+
+          if (set) {
+            redisClient.zadd(set, data[key].timestamp, hashkey)
+          }
+        }
+      })
+    })
+    log('[ EXPRESS ] - Parsed device data, pushed to Redis.')
+    res.json('ok')
+  }
+
+  catch (err) {
+    redisClient.close()
+    next('[ EXPRESS ] - Error parsing device data:', err)
+  }
+}
+
+module.exports = { addDevice, addUser, checkForUserAndPass, validateUser, validateDevice, sendToken, parseDeviceData }

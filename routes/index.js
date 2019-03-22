@@ -9,7 +9,8 @@ const {
   validateDevice, 
   addUser, 
   addDevice, 
-  sendToken } = require('./middleware');
+  sendToken,
+  parseDeviceData } = require('./middleware');
 
 router.post('/registeruser', 
   jsonParser, 
@@ -62,10 +63,9 @@ router.get('/ping', (req, res) => {
 
 router.post('/devicedata',
 validateDevice,
-jsonParser, 
+jsonParser,
+parseDeviceData,
 (req, res) => {
-  console.log(req.body)
-
   res.json('ok')
 })
 
