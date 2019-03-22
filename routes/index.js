@@ -10,63 +10,38 @@ const {
   addUser, 
   addDevice, 
   sendToken,
-  parseDeviceData } = require('./middleware');
+  parseDeviceData,
+  validateToken } = require('./middleware');
 
 router.post('/registeruser', 
   jsonParser, 
   checkForUserAndPass,
-  addUser
-)
+  addUser )
 
 router.post('/registerdevice', 
   jsonParser, 
-  addDevice
-)
+  addDevice )
 
 router.post('/gettoken', 
   jsonParser, 
   checkForUserAndPass,
   validateUser,
-  sendToken
-)
+  sendToken )
 
 router.post('/verifytoken',
-jsonParser,
-async (req, res) => {
-  
-  try {
-    let verifiedToken = await token.verify(req.body.token)
-    
-    res.json({
-      "status": "howdy!",
-      "token": verifiedToken
-    })
-  }
-  
-  catch (err) {
-    res.json({
-      "error": err
-    })
-  }
-})
+  jsonParser,
+  validateToken )
 
 router.post('/validatedevice',
-  validateDevice,
-  (req, res) => {
-    res.json('ok')
-  }
-)
+  validateDevice, 
+  ((req, res) => { res.sendStatus(200) } ))
 
 router.get('/ping', (req, res) => {
   res.send('PONG')
 })
 
 router.post('/devicedata',
-validateDevice,
-jsonParser,
-parseDeviceData,
-(req, res) => {
-  res.json('ok')
-})
+  validateDevice,
+  parseDeviceData )
 
 module.exports = router

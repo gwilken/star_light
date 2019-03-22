@@ -98,6 +98,17 @@ const validateDevice = async (req, res, next) => {
   }
 }
 
+const validateToken = async (req, res, next) => {
+  try {
+    let verifiedToken = await token.verify(req.body.token)
+    res.json(verifiedToken)
+  }
+  catch (err) {
+    log('[ EXPRESS ] - Token not verified.')
+    res.sendStatus(403)
+  }
+}
+
 const sendToken = async (req, res, next) => {
   let host = req.get('host')
   let { username } = req.body;
@@ -131,7 +142,7 @@ const parseDeviceData = (req, res, next) => {
       })
     })
     log('[ EXPRESS ] - Parsed device data, pushed to Redis.')
-    res.json('ok')
+    res.sendStatus(200)
   }
 
   catch (err) {
@@ -140,4 +151,13 @@ const parseDeviceData = (req, res, next) => {
   }
 }
 
-module.exports = { addDevice, addUser, checkForUserAndPass, validateUser, validateDevice, sendToken, parseDeviceData }
+module.exports = { 
+  addDevice, 
+  addUser, 
+  checkForUserAndPass,
+  validateUser,
+  validateDevice,
+  sendToken,
+  parseDeviceData,
+  validateToken 
+}
