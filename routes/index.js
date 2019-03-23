@@ -37,6 +37,7 @@ router.post('/validatedevice',
   ((req, res) => { res.sendStatus(200) } ))
 
 router.get('/ping', (req, res) => {
+  console.log('PONG')
   res.send('PONG')
 })
 
