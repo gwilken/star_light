@@ -3,13 +3,14 @@ const config = require('../config')
 const token = require('../auth/token.js');
 const RedisSub = require('../redis/RedisSubscriber')
 const redis = require('redis')
+const log = require('../utils/log')
 
 const wss = new WebSocket.Server({ port: config.ws.port });
-console.log('[ WEBSOCKET ] - Server up:', config.ws.port)
+log('[ WEBSOCKET ] - WS Server up:', config.ws.port)
 
 
 const closeConnection = (client) => {
-  console.log('[ WEBSOCKET ] - Closing client.')
+  log('[ WEBSOCKET ] - Closing client.')
   client.send('Client not validated. Closing connection.')
   client.close()
 }
@@ -38,7 +39,7 @@ const parseMessage = (str, wsClient, redisClient) => {
               })
               redisPub.quit()
             } catch (err) {
-              console.log('[ WEBSOCKET ] - Error:', err)
+              log('[ WEBSOCKET ] - Error:', err)
             }
           }
         break;
@@ -67,9 +68,8 @@ const parseMessage = (str, wsClient, redisClient) => {
           }
         break;
 
-
         case 'subscribeToKey':
-          console.log('subtokey')
+          log('subtokey')
 
             let redisSubKey = new RedisSub()
 
@@ -100,7 +100,7 @@ const parseMessage = (str, wsClient, redisClient) => {
         break;
         
         case 'subscribeToSeries':
-          console.log('subscribeToSeries')
+          log('subscribeToSeries')
         
             try {
               let redisSubTimeseries = new RedisSub()
@@ -111,10 +111,10 @@ const parseMessage = (str, wsClient, redisClient) => {
               
                 redisClient.zrange(key, -1, -1, 'WITHSCORES', (err, val) => {
                   let [hashkey, keyAsTimestamp] = val
-                  console.log('timestamp:', keyAsTimestamp, 'hashkey:', hashkey) 
+                  log('timestamp:', keyAsTimestamp, 'hashkey:', hashkey) 
                 
                   redisClient.hgetall(hashkey, (err, hashVal) => {
-                    console.log('hash:', hashVal)
+                    log('hash:', hashVal)
 
                     let data = {
                       message: {
@@ -133,7 +133,7 @@ const parseMessage = (str, wsClient, redisClient) => {
                 })
               })
             } catch (err) {
-              console.log('[ WEBSOCKET ] - Error subscribeToSeries:', err)
+              log('[ WEBSOCKET ] - Error subscribeToSeries:', err)
             }
           
         break;
@@ -146,14 +146,13 @@ const parseMessage = (str, wsClient, redisClient) => {
             
             redisSubEvent.onEventChange( (event, key) => {
               wsClient.send(`${event}, ${key}`)
-
             })
 
           }
         }
     }
   } catch (err) {
-    console.log('err parsing json:', err)
+    log('err parsing json:', err)
   }
 }
 
@@ -162,7 +161,7 @@ wss.on('connection', async (wsClient, req) => {
   let wsOrigin = req.headers.origin;
   let validated = false;
 
-  console.log('[ WEBSOCKET ] - Client attempting to connect:', wsOrigin)
+  log('[ WEBSOCKET ] - Client attempting to connect:', wsOrigin)
   
   try {
     //let wsToken = await token.getTokenFromQueryParam(req.url)
@@ -176,13 +175,12 @@ wss.on('connection', async (wsClient, req) => {
   }
 
   if (validated) {
-    console.log('[ WEBSOCKET ] - Client validated:', wsOrigin)
+    log('[ WEBSOCKET ] - Client validated:', wsOrigin)
     
     let redisClient = redis.createClient(config.redis.port, config.redis.host)
 
     wsClient.on('message', (msg) => {
       parseMessage(msg, wsClient, redisClient)
     })
-    
   }
 });

@@ -2,7 +2,9 @@ const mongo = require('../mongo');
 const token = require('../auth/token');
 const log = require('../utils/log');
 const redis = require('redis')
+const RedisClient = require('../redis/RedisClient.js')
 const config = require('../config')
+
 
 const addDevice = async (req, res, next) => { 
   let { deviceId, key } = req.body;
@@ -20,20 +22,28 @@ const addDevice = async (req, res, next) => {
   }
 }
 
+
 const addUser = async (req, res, next) => { 
-  let { username, password } = req.body;
-  let newUser = { username, password: await mongo.createPassword(password) }
+  let { newuser, newpass, newgroup } = req.body;
+  
+  let user = { 
+    username: newuser, 
+    password: await mongo.createPassword(newpass),
+    group: newgroup, 
+  }
+
   mongo.collection = mongo.collection = mongo.db.collection('users')
 
-  let insertRes = await mongo.insert(newUser)
+  let insertRes = await mongo.insert(user)
 
   if (insertRes.result.ok) {
-    log('[ ROUTES ] - User registerd:', username)
+    log('[ ROUTES ] - User registerd:', newuser)
     res.status(200).json({"status": "registered"})
   } else {
-    next('[ EXPRESS ] - Error registering user:', username)
+    next('[ EXPRESS ] - Error registering user:', newuser)
   }
 }
+
 
 const checkForUserAndPass = (req, res, next) => {
   if (!req.body.username) {
@@ -51,6 +61,32 @@ const checkForUserAndPass = (req, res, next) => {
   }
   next()
 }
+
+
+const validateAdminUser = async (req, res, next) => {
+  let dbUser = await mongo.findUser(req.body.username)
+
+  const failValidation = (err) => {
+    res.status(403).json({
+      error: 'Validation failed.',
+    })
+    next(`[ EXPRESS ] - Error: Validation failed: ${err}`)
+  }
+
+  if (dbUser) {
+    let isValid = await mongo.validatePassword(req.body.password, dbUser.password) 
+    let isAdmin = dbUser.group === 'admin' ? true : false
+
+    if (isValid && isAdmin) {
+      next()
+    } else {
+      failValidation('Admin authentication valid.')
+    }
+  } else {
+    failValidation('User not found.')
+  }
+}
+
 
 const validateUser = async (req, res, next) => {
   let dbUser = await mongo.findUser(req.body.username)
@@ -75,6 +111,7 @@ const validateUser = async (req, res, next) => {
   }
 }
 
+
 const validateDevice = async (req, res, next) => {
   let device = await mongo.findDevice(req.body.deviceId)
   
@@ -98,16 +135,22 @@ const validateDevice = async (req, res, next) => {
   }
 }
 
+
 const validateToken = async (req, res, next) => {
-  try {
+  try {  
     let verifiedToken = await token.verify(req.body.token)
-    res.json(verifiedToken)
+    if (!verifiedToken) {
+      res.sendStatus(403)
+    } else {
+      next()
+    }
   }
+
   catch (err) {
-    log('[ EXPRESS ] - Token not verified.')
     res.sendStatus(403)
   }
 }
+
 
 const sendToken = async (req, res, next) => {
   let host = req.get('host')
@@ -115,6 +158,7 @@ const sendToken = async (req, res, next) => {
   const newToken = await token.generateJWT(username, host)
   res.json({ "token" : newToken })  
 }
+
 
 const parseDeviceData = (req, res, next) => {
   let redisClient = redis.createClient(config.redis.port, config.redis.host)
@@ -151,13 +195,35 @@ const parseDeviceData = (req, res, next) => {
   }
 }
 
+
+const getHashsFromSet = async (req, res, next) => {
+  let {set, start, end} = req.body
+  let redisClient = new RedisClient()
+  let docs = await redisClient.getHashsFromSet(set, start, end)
+  redisClient.quit()
+  res.json(docs)
+}
+
+
+const getHashsFromSetByScore = async (req, res, next) => {
+  let {set, start, end} = req.body
+  let redisClient = new RedisClient()
+  let docs = await redisClient.getHashsFromSetByScore(set, start, end)
+  redisClient.quit()
+  res.json(docs)
+}
+
+
 module.exports = { 
   addDevice, 
   addUser, 
   checkForUserAndPass,
+  validateAdminUser,
   validateUser,
   validateDevice,
   sendToken,
   parseDeviceData,
-  validateToken 
+  validateToken,
+  getHashsFromSet,
+  getHashsFromSetByScore
 }

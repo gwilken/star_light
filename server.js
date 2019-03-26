@@ -16,5 +16,5 @@ app.use(routes)
 mongo.connect()
 
 app.listen(config.app.port, function() {
-  console.log('[ EXPRESS ] - Server up:', config.app.port)
+  console.log('[ EXPRESS ] - REST Server up:', config.app.port)
 })

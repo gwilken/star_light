@@ -2,25 +2,39 @@
 const router = require('express').Router();
 const bodyParser = require('body-parser')
 const jsonParser = bodyParser.json();
-const token = require('../auth/token');
 const { 
   checkForUserAndPass, 
-  validateUser, 
+  validateUser,
+  validateAdminUser, 
   validateDevice, 
   addUser, 
   addDevice, 
   sendToken,
   parseDeviceData,
-  validateToken } = require('./middleware');
+  validateToken,
+  getHashsFromSet,
+  getHashsFromSetByScore } = require('./middleware');
+
 
 router.post('/registeruser', 
   jsonParser, 
-  checkForUserAndPass,
+  validateAdminUser,
   addUser )
 
+
+// router.post('/validateadmin',
+//   jsonParser, 
+//   validateAdminUser,
+//   ((req, res, next) => {
+//     res.send('OK')
+//   }))
+
+
 router.post('/registerdevice', 
-  jsonParser, 
+  jsonParser,
+  validateAdminUser, 
   addDevice )
+
 
 router.post('/gettoken', 
   jsonParser, 
@@ -28,21 +42,34 @@ router.post('/gettoken',
   validateUser,
   sendToken )
 
+
 router.post('/verifytoken',
   jsonParser,
   validateToken )
+
 
 router.post('/validatedevice',
   validateDevice, 
   ((req, res) => { res.sendStatus(200) } ))
 
-router.get('/ping', (req, res) => {
-  console.log('PONG')
-  res.send('PONG')
-})
 
 router.post('/devicedata',
   validateDevice,
   parseDeviceData )
 
+  
+router.post('/gethashesfromset',
+  validateToken,
+  getHashsFromSet
+)
+
+
+router.post('/gethashesfromsetbyscore',
+  validateToken,
+  getHashsFromSetByScore
+)
+
+
+router.post('/ping', (req, res) => { res.send('PONG') })
+  
 module.exports = router
