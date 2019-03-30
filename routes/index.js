@@ -59,13 +59,13 @@ router.post('/devicedata',
 
   
 router.post('/gethashesfromset',
-  validateToken,
+ // validateToken,
   getHashsFromSet
 )
 
 
 router.post('/gethashesfromsetbyscore',
-  validateToken,
+  //validateToken,
   getHashsFromSetByScore
 )
 
