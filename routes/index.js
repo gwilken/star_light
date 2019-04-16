@@ -42,9 +42,9 @@ router.post('/gettoken',
   router.post('/verifytoken',
     jsonParser,
     validateHeaderAuthorizationToken,
-    (req, res) => {
+    ( (req, res) => {
       res.json('OK')
-    })
+    }) )
   
   
 router.post('/device-validator/device',
