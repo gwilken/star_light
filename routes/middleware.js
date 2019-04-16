@@ -9,6 +9,7 @@ const config = require('../config')
 const addDevice = async (req, res, next) => { 
   let { deviceId, key } = req.body;
   let newDevice = { deviceId, key: await mongo.createPassword(key) }
+  mongo.connect()
 
   mongo.collection = mongo.collection = mongo.db.collection('devices')
 
@@ -16,6 +17,7 @@ const addDevice = async (req, res, next) => {
 
   if (insertRes.result.ok) {
     log('[ ROUTES ] - Device registerd:', newDevice.deviceId)
+    mongo.close();
     res.status(200).json({"status": "registered"})
   } else {
     next('[ EXPRESS ] - Error registering device:', username)
@@ -152,6 +154,26 @@ const validateToken = async (req, res, next) => {
 }
 
 
+
+const validateHeaderAuthorizationToken = async (req, res, next) => {
+  try {  
+    let verifiedToken = await token.verify(req.headers.authorization)
+    if (!verifiedToken) {
+      res.sendStatus(403)
+    } else {
+      next()
+    }
+  }
+
+  catch (err) {
+    log('[ EXPRESS ] - Header authorization token not valid.')
+    res.sendStatus(403)
+  }
+}
+
+
+
+
 const sendToken = async (req, res, next) => {
   let host = req.get('host')
   let { username } = req.body;
@@ -160,11 +182,46 @@ const sendToken = async (req, res, next) => {
 }
 
 
-const parseDeviceData = (req, res, next) => {
+const validateJsonBodyData = (req, res, next) => {
+  console.log(req.body)
+  try {
+    JSON.parse(req.body)
+    next()
+  }
+
+  catch (err) {
+    log('[ EXPRESS ] - Error validating JSON.', err)
+    res.sendStatus(400)
+  }
+}
+
+
+const validateDeviceData = (req, res, next) => {
+  try {
+    let { id, deviceName, timestamp, data } = req.body;
+
+    if (id && deviceName && timestamp && data) {
+      next()
+    } else {
+      res.sendStatus(400)
+    }
+  }
+
+  catch (err) {
+    res.sendStatus(400)
+  }
+}
+
+
+const addDataToRedis = (req, res, next) => {
   let redisClient = redis.createClient(config.redis.port, config.redis.host)
   
+  //TODO: logic to remove devices from set
+
   try {
-    let { data } = req.body || {}
+    let data = req.body || {}
+
+    redisClient.sadd('starlight-devices', `${data.deviceName}-${data.id}`)
 
     Object.keys(data).forEach(key => {
       Object.entries(data[key]).forEach(entry => {
@@ -185,8 +242,9 @@ const parseDeviceData = (req, res, next) => {
         }
       })
     })
+    redisClient.quit();
     log('[ EXPRESS ] - Parsed device data, pushed to Redis.')
-    res.sendStatus(200)
+    next()
   }
 
   catch (err) {
@@ -222,8 +280,11 @@ module.exports = {
   validateUser,
   validateDevice,
   sendToken,
-  parseDeviceData,
+  validateJsonBodyData,
+  validateDeviceData,
+  addDataToRedis,
   validateToken,
+  validateHeaderAuthorizationToken,
   getHashsFromSet,
   getHashsFromSetByScore
 }

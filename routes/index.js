@@ -10,54 +10,68 @@ const {
   addUser, 
   addDevice, 
   sendToken,
-  parseDeviceData,
+  validateJsonBodyData,
+  validateDeviceData,
+  addDataToRedis,
   validateToken,
+  validateHeaderAuthorizationToken,
   getHashsFromSet,
   getHashsFromSetByScore } = require('./middleware');
 
 
-router.post('/registeruser', 
+router.post('/users', 
   jsonParser, 
   validateAdminUser,
   addUser )
 
 
-// router.post('/validateadmin',
-//   jsonParser, 
-//   validateAdminUser,
-//   ((req, res, next) => {
-//     res.send('OK')
-//   }))
-
-
-router.post('/registerdevice', 
+router.post('/devices', 
   jsonParser,
   validateAdminUser, 
   addDevice )
-
-
+  
 router.post('/gettoken', 
   jsonParser, 
-  checkForUserAndPass,
-  validateUser,
+  //checkForUserAndPass,
+  //validateUser,
   sendToken )
 
-
-router.post('/verifytoken',
-  jsonParser,
-  validateToken )
-
-
-router.post('/validatedevice',
+  
+  // router.post('/verifytoken',
+  //   jsonParser,
+  //   validateToken )
+  
+  
+router.post('/validator/device',
   validateDevice, 
   ((req, res) => { res.sendStatus(200) } ))
+  
+
+router.post('/validator/admin',
+  jsonParser, 
+  validateAdminUser,
+  ((req, res, next) => {
+    res.send('OK')
+  }))
 
 
-router.post('/devicedata',
-  validateDevice,
-  parseDeviceData )
+router.post('/data',
+  //validateDevice,
+  jsonParser,
+  validateDeviceData,
+  addDataToRedis,
+  (req, res) => {
+    res.sendStatus(200)
+  }
+)
 
   
+router.post('/subscriber',
+  jsonParser,
+
+)
+
+
 router.post('/gethashesfromset',
  // validateToken,
   getHashsFromSet
@@ -68,6 +82,15 @@ router.post('/gethashesfromsetbyscore',
   //validateToken,
   getHashsFromSetByScore
 )
+
+router.get('/test/:device', 
+  validateHeaderAuthorizationToken,
+  (req, res) => {
+    console.log(req.params.device)
+    console.log(req.headers.authorization)
+
+    res.sendStatus(200)
+})
 
 
 router.post('/ping', (req, res) => { res.send('PONG') })
