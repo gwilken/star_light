@@ -1,6 +1,6 @@
 // routes/index.js
 const router = require('express').Router();
-const mongo = require('./mongo');
+//const mongo = require('./mongo');
 
 const bodyParser = require('body-parser')
 const jsonParser = bodyParser.json();
@@ -39,12 +39,12 @@ router.post('/gettoken',
   sendToken )
 
   
-  router.post('/verifytoken',
-    jsonParser,
-    validateHeaderAuthorizationToken,
-    ( (req, res) => {
-      res.json('OK')
-    }) )
+router.post('/verifytoken',
+  jsonParser,
+  validateHeaderAuthorizationToken,
+  ((req, res) => {
+    res.json('OK')
+  }))
   
   
 router.post('/device-validator/device',
