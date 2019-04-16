@@ -1,5 +1,7 @@
 // routes/index.js
 const router = require('express').Router();
+const mongo = require('./mongo');
+
 const bodyParser = require('body-parser')
 const jsonParser = bodyParser.json();
 const { 
@@ -37,17 +39,20 @@ router.post('/gettoken',
   sendToken )
 
   
-  // router.post('/verifytoken',
-  //   jsonParser,
-  //   validateToken )
+  router.post('/verifytoken',
+    jsonParser,
+    validateHeaderAuthorizationToken,
+    (req, res) => {
+      res.json('OK')
+    })
   
   
-router.post('/validator/device',
+router.post('/device-validator/device',
   validateDevice, 
   ((req, res) => { res.sendStatus(200) } ))
   
 
-router.post('/validator/admin',
+router.post('/user-validator/admin',
   jsonParser, 
   validateAdminUser,
   ((req, res, next) => {
@@ -55,7 +60,7 @@ router.post('/validator/admin',
   }))
 
 
-router.post('/data',
+router.post('/device-data/:deviceId',
   //validateDevice,
   jsonParser,
   validateDeviceData,
@@ -66,10 +71,15 @@ router.post('/data',
 )
 
   
-router.post('/subscriber',
-  jsonParser,
 
-)
+// TODO: device subscribe endpoint, 
+// opens websocket server bound to redis sub, res includes
+// socket port? 
+
+// router.post('/device-subscriber',
+//   jsonParser,
+
+// )
 
 
 router.post('/gethashesfromset',
