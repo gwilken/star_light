@@ -43,7 +43,7 @@ router.post('/verifytoken',
   jsonParser,
   validateHeaderAuthorizationToken,
   ((req, res) => {
-    res.json('OK')
+    res.sendStatus(200)
   }))
   
   
