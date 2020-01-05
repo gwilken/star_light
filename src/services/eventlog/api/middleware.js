@@ -5,14 +5,10 @@ const log = require('./utils/log');
 const AUTH_PATH = process.env.AUTH_PATH || 'http://localhost:4000/verifytoken/'
 
 
-// TODO: different validations for pub / sub
-
-
 const checkMsgSchema = (req, res, next) => {
-  log('checkMsgSchema...')
-
   const failValidation = () => {
-    res.status(400).json('Bad Request')
+    log('[ EVENTLOG ] - Message schema validation failed.')
+    res.status(400).json('Message schema validation failed.')
   }
 
   if(!req.body && req.body['action']) {
@@ -26,7 +22,7 @@ const checkMsgSchema = (req, res, next) => {
       failValidation()
     }
   } else if (req.body['action'] === 'subscribe') {
-    if (req.body['timestamp'] && req.body['type'] && req.body['subscriber_host'] && req.body['subscriber_port']) {
+    if (req.body['timestamp'] && req.body['type'] && req.body['subscriber_url'] && req.body['subscriber_path']) {
       next()
     } else {
       failValidation()
@@ -36,51 +32,58 @@ const checkMsgSchema = (req, res, next) => {
 
 
 const validateMsg = (req, res, next) => {
-  log('validateMsg...')
-
   request({ url: AUTH_PATH,
     method: 'POST',
     headers: { 'Authorization': req.headers.authorization },
   }, function (err, authRes) {
     if (!err && authRes.statusCode == 200) {
-        log('validate success!')
         next()
     } else {
-      log('validate failed!')
-      res.status(403).json('Forbidden')
+      res.status(403).json('Message validation failed.')
     }
   })
 }
 
 
 const subscribeToLog = (req, res, next) => {
-  log('subtolog', req.body)
+  const { type, subscriber_url, subscriber_path } = req.body
 
-  const { type, subscriber_host, subscriber_port } = req.body
+  const failSubscribe = () => {
+    res.status(503).json('Subscribe to service failed.')
+  }
 
-  redisManager.subscribeToKey(type, (event) => {
-    request(
-      { 
-        url: `${subscriber_host}:${subscriber_port}/test`,
-        // headers: { 'Authorization': req.headers.authorization },
-        method: 'POST',
-        json: true,
-        body: {
-          type,
-          event
-        }
-      }, function (err, authRes) {
-        if (!err && authRes.statusCode == 200) {
-          log('success!')
-        
-          // TODO: handle success and fail
+  request.get(`${subscriber_url}/health`, {}, (err, healthRes) => {
+    if (err) {
+      log('[ EVENTLOG ] - Error: service unavailable, health check failed:', err)
+      failSubscribe()
+    }
 
-          next()
-        } else {
-          log('failed!', err)
+    if (healthRes) {
+      if (healthRes.statusCode !== 200) {
+        failSubscribe()
+      } else {
+        // log('[ EVENTLOG ] - Subscribe health check OK.')
 
-        }
-      })
+        redisManager.subscribeToKey(type, (event) => {
+          request({ 
+            url: `${subscriber_url}/${subscriber_path}`,
+            headers: { 'Authorization': req.headers.authorization },
+            method: 'POST',
+            json: true,
+            body: {
+              type,
+              event
+            }
+          }, (err, authRes) => {
+            if (err) {
+              failSubscribe()
+            } else if (authRes && authRes.statusCode == 200) {
+              next()
+            }
+          })
+        })
+      }
+    }
   })
 
   res.status(200).json('OK')
@@ -88,13 +91,21 @@ const subscribeToLog = (req, res, next) => {
 
 
 const publishToLog = (req, res, next) => {
-  // log('pubtolog', req.body)
-  log('pubtolog...')
-
   redisManager.publishToSet(req.body)
-
-
   res.status(200).json('OK')
+}
+
+
+const sendLogs = async (req, res, next) => {
+  let { key, timestamp } = req.params
+
+  console.log('[ EVENTLOG ] - req params:', key, timestamp)
+  
+  let logs = await redisManager.getFromTimestamp(key, timestamp)
+  
+  console.log('logs:', logs)
+  
+  res.status(200).json(logs)
 }
 
 
@@ -102,5 +113,6 @@ module.exports = {
   checkMsgSchema,
   validateMsg,
   subscribeToLog,
-  publishToLog
+  publishToLog,
+  sendLogs
 }

@@ -47,28 +47,30 @@ services:
 
   logs:
     build: ./services/logs/api
-    depends_on:
-      - logs_elastic
+    # depends_on:
+      # - logs_elastic
     environment:
       - API_PORT=6000
+      - AUTH_PATH=http://auth:4000/verifytoken
+      - EVENTLOG_PATH=http://eventlog:5000/retrieve
     ports:
       - 6000:6000
 
 
-  logs_elastic:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
-    environment:
-      - node.name=elastic-cluster
-      - cluster.initial_master_nodes=elastic-cluster
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - xpack.security.enabled=false
-      - http.host=0.0.0.0
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    ports:
-      - 9200:9200
+  # logs_elastic:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.5.1
+  #   environment:
+  #     - node.name=elastic-cluster
+  #     - cluster.initial_master_nodes=elastic-cluster
+  #     - bootstrap.memory_lock=true
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  #     - xpack.security.enabled=false
+  #     - http.host=0.0.0.0
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #   ports:
+  #     - 9200:9200
 
   

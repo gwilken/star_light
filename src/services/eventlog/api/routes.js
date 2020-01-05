@@ -7,21 +7,27 @@ const {
   checkMsgSchema,
   validateMsg,
   subscribeToLog, 
-  publishToLog } = require('./middleware');
+  publishToLog,
+  sendLogs } = require('./middleware');
 
 
 router.post('/subscribe',
   jsonParser,
   checkMsgSchema,
-  // validateMsg,
+  validateMsg,
   subscribeToLog )
 
 
 router.post('/publish',
   jsonParser,
   checkMsgSchema,
-  // validateMsg,
+  validateMsg,
   publishToLog )
+
+
+router.get('/retrieve/:key/:timestamp',
+  validateMsg,
+  sendLogs )
 
 
 router.get('/health', (req, res) => {

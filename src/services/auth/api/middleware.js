@@ -156,7 +156,7 @@ const validateHeaderAuthorizationToken = async (req, res, next) => {
     if (!verifiedToken) {
       res.sendStatus(403)
     } else {
-      log('[ AUTH ] - Token Validated.')
+      // log('[ AUTH ] - Token Validated.')
       next()
     }
   }

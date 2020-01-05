@@ -16,11 +16,14 @@ class RedisManager {
     this.zadd = promisify(this.publishClient.zadd).bind(this.publishClient)
 
     this.subscribeClient.config("SET", "notify-keyspace-events", "KEA");
-    this.zrange = promisify(this.subscribeClient.zrange).bind(this.subscribeClient)
-    this.zrangebyscore = promisify(this.subscribeClient.zrangebyscore).bind(this.subscribeClient)
-    this.zrevrange = promisify(this.subscribeClient.zrevrange).bind(this.subscribeClient)
-    this.asyncHget = promisify(this.subscribeClient.hget).bind(this.subscribeClient)
-    this.asyncHgetall = promisify(this.subscribeClient.hgetall).bind(this.subscribeClient)
+
+    this.zrange = promisify(this.publishClient.zrange).bind(this.publishClient)
+    this.zrangebyscore = promisify(this.publishClient.zrangebyscore).bind(this.publishClient)
+    this.zrevrange = promisify(this.publishClient.zrevrange).bind(this.publishClient)
+    this.zrevrangebyscore = promisify(this.publishClient.zrevrangebyscore).bind(this.publishClient)
+
+    // this.asyncHget = promisify(this.subscribeClient.hget).bind(this.subscribeClient)
+    // this.asyncHgetall = promisify(this.subscribeClient.hgetall).bind(this.subscribeClient)
   
     this.subscribeClient.on('ready', () => {
       log('[ EVENTLOG ] - Redis ready.')
@@ -52,7 +55,7 @@ class RedisManager {
     this.subscribedKeys[key] = this.subscribedKeys[key] || []
     this.subscribedKeys[key].push(cb)
     
-    log('subscribeToKey', this.subscribedKeys[key])
+    log('[ EVENTLOG ] - Key subscribed to:', key)
   }
   
 
@@ -62,7 +65,7 @@ class RedisManager {
     this.subscribedEvent[event] = this.subscribedEvent[event] || []
     this.subscribedEvent[event].push(cb)
     
-    log('subscribeToKey', this.subscribedEvent[event])
+    log('[ EVENTLOG ] - Event subscribed to:', event)
   }
 
 
@@ -80,8 +83,16 @@ class RedisManager {
   }
 
 
+  getFromTimestamp(key, timestamp) {
+    return new Promise( async (resolve, reject) => {
+      let logs = await this.zrange(key, timestamp, '-1', 'WITHSCORES')
+      resolve(logs)
+    })
+  }
+
   quit () {
     this.subscribeClient.quit()
+    this.publishClient.quit()
   }
 }
 
