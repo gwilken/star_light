@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const secret = require('./secret');
-const log = require('../utils/log');
+const log = require('./utils/log');
 
 const token = {
   generateJWT: (username, host) => {
@@ -14,11 +14,11 @@ const token = {
          // exp: now + (60),
         }, secret);
 
-        log(`[ TOKEN ] - JWT generated for ${username}@${host} at ${now}`)
+        log(`[ AUTH ] - JWT generated for ${username}@${host} at ${now}`)
         resolve(token);
       }
       catch (err) {
-        log(`[ TOKEN ] - Error: Can\'t generate token.`)
+        log(`[ AUTH ] - Error: Can\'t generate token.`)
         reject(err)
       }
     })
@@ -30,7 +30,7 @@ const token = {
         let res = jwt.verify(token, secret)
         resolve(res)
       } catch(err) {
-        log('[ TOKEN ] - Error: Token not verfied.')
+        log('[ AUTH ] - Error: Token not verfied.')
         reject(err)
       }
     })
@@ -42,7 +42,7 @@ const token = {
         let wsToken = str.split('/?token=')[1]
         resolve(wsToken)
       } catch (err) {
-        log('[ TOKEN ] - Error: Can\'t get token from paramater.')
+        log('[ AUTH ] - Error: Can\'t get token from paramater.')
         reject(err)
       }
     })
@@ -53,7 +53,7 @@ const token = {
       try {
         if (tokenStr) {
           if (tokenStr.origin === origin) {
-            log('[ TOKEN ] - Origin validated.')
+            log('[ AUTH ] - Origin validated.')
             resolve(true);
           } else {
             throw "Token origin mismatch."
@@ -62,7 +62,7 @@ const token = {
       } 
       
       catch (err) {
-        log('[ TOKEN ] - Error:', err)
+        log('[ AUTH ] - Error:', err)
         reject(err)
       }
     })

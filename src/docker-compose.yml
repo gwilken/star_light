@@ -1,0 +1,74 @@
+version: '3'
+services:  
+  auth:
+    build: ./services/auth/api
+    depends_on:
+      - auth_mongo
+    environment:
+      - API_PORT=4000
+      - MONGO_PATH=mongodb://auth_mongo:27017
+      - MONGO_DB=starlight
+      - MONGO_COLLECTION=users
+    ports:
+      - 4000:4000
+
+
+  auth_mongo:
+    image: mongo:4.2
+    command: mongod --bind_ip_all --port 27017
+    ports:
+      - 27017:27017
+
+
+  auth_mongo_seed:
+    build: ./services/auth/mongo
+    depends_on:
+      - auth_mongo
+
+
+  eventlog:
+    build: ./services/eventlog/api
+    depends_on:
+      - eventlog_redis
+    environment:
+      - API_PORT=5000
+      - AUTH_PATH=http://auth:4000/verifytoken
+      - REDIS_HOST=eventlog_redis
+      - REDIS_PORT=6379
+    ports:
+      - 5000:5000
+
+
+  eventlog_redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+
+
+  logs:
+    build: ./services/logs/api
+    depends_on:
+      - logs_elastic
+    environment:
+      - API_PORT=6000
+    ports:
+      - 6000:6000
+
+
+  logs_elastic:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
+    environment:
+      - node.name=elastic-cluster
+      - cluster.initial_master_nodes=elastic-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - http.host=0.0.0.0
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9200:9200
+
+  

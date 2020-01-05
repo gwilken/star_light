@@ -1,0 +1,19 @@
+{
+  "name": "star_light_logs_api",
+  "version": "1.0.0",
+  "description": "Starlight logs service api",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "export NODE_ENV=development && nodemon server.js",
+    "build": "export NODE_ENV=production && nodemon server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@elastic/elasticsearch": "^7.5.0",
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "nodemon": "^2.0.2"
+  }
+}

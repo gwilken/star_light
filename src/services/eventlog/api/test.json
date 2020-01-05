@@ -1,0 +1,13 @@
+{
+	"timestamp": "00001",
+	"type": "telemetry",
+	"action": "publish",
+	"msg": {
+		"timestamp": "0002",
+		"data": {
+			"speed": "40",
+			"lat": "001",
+			"lon": "002"
+		}
+	}
+}

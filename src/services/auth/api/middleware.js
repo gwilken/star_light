@@ -1,48 +1,38 @@
-const mongo = require('../mongo');
-const token = require('../auth/token');
-const log = require('../utils/log');
-const redis = require('redis')
-const RedisClient = require('../redis/RedisClient.js')
-const config = require('../config')
+const mongo = require('./mongo');
+const token = require('./token');
+const log = require('./utils/log');
 
 
 const addDevice = async (req, res, next) => { 
-  let { deviceId, key } = req.body;
-  let newDevice = { deviceId, key: await mongo.createPassword(key) }
+  let { device_id, key } = req.body;
+  let newDevice = { device_id, key: await mongo.createPassword(key) }
   mongo.connect()
-
   mongo.collection = mongo.collection = mongo.db.collection('devices')
-
   let insertRes = await mongo.insert(newDevice)
-
   if (insertRes.result.ok) {
-    log('[ ROUTES ] - Device registerd:', newDevice.deviceId)
+    log('[ AUTH ] - Device registerd:', newDevice.device_id)
     mongo.close();
     res.status(200).json({"status": "registered"})
   } else {
-    next('[ EXPRESS ] - Error registering device:', username)
+    next('[ AUTH ] - Error registering device:', username)
   }
 }
 
 
 const addUser = async (req, res, next) => { 
   let { newuser, newpass, newgroup } = req.body;
-  
   let user = { 
     username: newuser, 
     password: await mongo.createPassword(newpass),
     group: newgroup, 
   }
-
   mongo.collection = mongo.collection = mongo.db.collection('users')
-
   let insertRes = await mongo.insert(user)
-
   if (insertRes.result.ok) {
-    log('[ ROUTES ] - User registerd:', newuser)
+    log('[ AUTH ] - User registerd:', newuser)
     res.status(200).json({"status": "registered"})
   } else {
-    next('[ EXPRESS ] - Error registering user:', newuser)
+    next('[ AUTH ] - Error registering user:', newuser)
   }
 }
 
@@ -52,14 +42,13 @@ const checkForUserAndPass = (req, res, next) => {
     res.status(422).json({
       error: 'username is required.',
     })
-    next('[ EXPRESS ] - Error, username is required.')
+    next('[ AUTH ] - Error, username is required.')
   }
-
   if (!req.body.password) {
     res.status(422).json({
       error: 'password is required.',
     })
-    next('[ EXPRESS ] - Error, password is required')
+    next('[ AUTH ] - Error, password is required')
   }
   next()
 }
@@ -67,18 +56,15 @@ const checkForUserAndPass = (req, res, next) => {
 
 const validateAdminUser = async (req, res, next) => {
   let dbUser = await mongo.findUser(req.body.username)
-
   const failValidation = (err) => {
     res.status(403).json({
       error: 'Validation failed.',
     })
-    next(`[ EXPRESS ] - Error: Validation failed: ${err}`)
+    next(`[ AUTH ] - Error: Validation failed: ${err}`)
   }
-
   if (dbUser) {
     let isValid = await mongo.validatePassword(req.body.password, dbUser.password) 
     let isAdmin = dbUser.group === 'admin' ? true : false
-
     if (isValid && isAdmin) {
       next()
     } else {
@@ -92,17 +78,14 @@ const validateAdminUser = async (req, res, next) => {
 
 const validateUser = async (req, res, next) => {
   let dbUser = await mongo.findUser(req.body.username)
-
   const failValidation = (err) => {
     res.status(403).json({
       error: 'Validation failed.',
     })
-    next(`[ EXPRESS ] - Error: Validation failed: ${err}`)
+    next(`[ AUTH ] - Error: Validation failed: ${err}`)
   }
-
   if (dbUser) {
     let isValid = await mongo.validatePassword(req.body.password, dbUser.password) 
-
     if (isValid) {
       next()
     } else {
@@ -115,18 +98,15 @@ const validateUser = async (req, res, next) => {
 
 
 const validateDevice = async (req, res, next) => {
-  let device = await mongo.findDevice(req.body.deviceId)
-  
+  let device = await mongo.findDevice(req.body.device_id)
   const failValidation = (err) => {
     res.status(403).json({
       error: 'Device validation failed.',
     })
-    next(`[ EXPRESS ] - Error: Device validation failed: ${err}`)
+    next(`[ AUTH ] - Error: Device validation failed: ${err}`)
   }
-
   if (device) {
     let isValid = await mongo.validatePassword(req.body.key, device.key) 
-
     if (isValid) {
       next()
     } else {
@@ -134,6 +114,22 @@ const validateDevice = async (req, res, next) => {
     }
   } else {
     failValidation('Device not found.')
+  }
+}
+
+
+const validateKey = async (req, res, next) => {
+  let device = await mongo.validateKey(req.body.key)
+  const failValidation = (err) => {
+    res.status(403).json({
+      error: 'Validation failed.',
+    })
+    next(`[ AUTH ] - Error: Validation failed. ${err}`)
+  }
+  if (device) {
+    next()
+  } else {
+    failValidation('Key not found.')
   }
 }
 
@@ -147,7 +143,6 @@ const validateToken = async (req, res, next) => {
       next()
     }
   }
-
   catch (err) {
     res.sendStatus(403)
   }
@@ -161,17 +156,32 @@ const validateHeaderAuthorizationToken = async (req, res, next) => {
     if (!verifiedToken) {
       res.sendStatus(403)
     } else {
+      log('[ AUTH ] - Token Validated.')
       next()
     }
   }
-
   catch (err) {
-    log('[ EXPRESS ] - Header authorization token not valid.')
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    log('[ AUTH ] - Header authorization token not valid:', ip)
     res.sendStatus(403)
   }
 }
 
 
+const validateHeaderAuthorizationKey = async (req, res, next) => {
+  let device = await mongo.validateKey(req.headers.authorization)
+  const failValidation = (err) => {
+    res.status(403).json({
+      error: 'Validation failed.',
+    })
+    next(`[ AUTH ] - Error: Validation failed. ${err}`)
+  }
+  if (device) {
+    next()
+  } else {
+    failValidation('Key not found.')
+  }
+}
 
 
 const sendToken = async (req, res, next) => {
@@ -188,87 +198,10 @@ const validateJsonBodyData = (req, res, next) => {
     JSON.parse(req.body)
     next()
   }
-
   catch (err) {
-    log('[ EXPRESS ] - Error validating JSON.', err)
+    log('[ AUTH ] - Error validating JSON.', err)
     res.sendStatus(400)
   }
-}
-
-
-const validateDeviceData = (req, res, next) => {
-  try {
-    let { id, deviceName, timestamp, data } = req.body;
-
-    if (id && deviceName && timestamp && data) {
-      next()
-    } else {
-      res.sendStatus(400)
-    }
-  }
-
-  catch (err) {
-    res.sendStatus(400)
-  }
-}
-
-
-const addDataToRedis = (req, res, next) => {
-  let redisClient = redis.createClient(config.redis.port, config.redis.host)
-  
-  //TODO: logic to remove devices from set
-
-  try {
-    let data = req.body || {}
-
-    redisClient.sadd('starlight-devices', `${data.deviceName}-${data.id}`)
-
-    Object.keys(data).forEach(key => {
-      Object.entries(data[key]).forEach(entry => {
-        
-        let [ groupKey, val ] = entry
-
-        if (groupKey === 'redis') {
-          let { hashkey, set } = data[key]['redis']
-
-          if (hashkey) {
-            let { redis, ...objNoRedis } = data[key]
-            redisClient.hmset(hashkey, objNoRedis)
-          }
-
-          if (set) {
-            redisClient.zadd(set, data[key].timestamp, hashkey)
-          }
-        }
-      })
-    })
-    redisClient.quit();
-    log('[ EXPRESS ] - Parsed device data, pushed to Redis.')
-    next()
-  }
-
-  catch (err) {
-    redisClient.close()
-    next('[ EXPRESS ] - Error parsing device data:', err)
-  }
-}
-
-
-const getHashsFromSet = async (req, res, next) => {
-  let {set, start, end} = req.body
-  let redisClient = new RedisClient()
-  let docs = await redisClient.getHashsFromSet(set, start, end)
-  redisClient.quit()
-  res.json(docs)
-}
-
-
-const getHashsFromSetByScore = async (req, res, next) => {
-  let {set, start, end} = req.body
-  let redisClient = new RedisClient()
-  let docs = await redisClient.getHashsFromSetByScore(set, start, end)
-  redisClient.quit()
-  res.json(docs)
 }
 
 
@@ -281,10 +214,8 @@ module.exports = {
   validateDevice,
   sendToken,
   validateJsonBodyData,
-  validateDeviceData,
-  addDataToRedis,
+  validateKey,
   validateToken,
   validateHeaderAuthorizationToken,
-  getHashsFromSet,
-  getHashsFromSetByScore
+  validateHeaderAuthorizationKey
 }

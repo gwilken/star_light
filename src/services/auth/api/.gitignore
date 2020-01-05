@@ -1,3 +1,3 @@
 node_modules
 package-lock.json
-./src/services/auth/secret.js
+./secret.js

@@ -1,7 +1,7 @@
 {
   "name": "star_light",
   "version": "0.0.1",
-  "description": "Realtime API server built with Redis and Websockets",
+  "description": "Starlight auth service",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -24,12 +24,10 @@
     "errorhandler": "^1.5.0",
     "express": "^4.16.4",
     "jsonwebtoken": "^8.4.0",
-    "mongodb": "^3.1.13",
+    "mongodb": "^3.4.1",
     "nodemon": "^1.18.10",
     "passport": "^0.4.0",
     "passport-http": "^0.3.0",
-    "passport-jwt": "^4.0.0",
-    "redis": "^2.8.0",
-    "ws": "^6.1.4"
+    "passport-jwt": "^4.0.0"
   }
 }
