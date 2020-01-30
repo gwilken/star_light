@@ -1,5 +1,6 @@
 // eventlog/api/middleware.js
 const request = require('request')
+const elasticManager = require('./ElasticManager')
 
 const log = require('./utils/log');
 const AUTH_PATH = process.env.AUTH_PATH || 'http://localhost:4000/verifytoken/'
@@ -51,13 +52,90 @@ const validateMsg = (req, res, next) => {
 }
 
 
+
+
+
 const publishToElastic = (req, res, next) => {
   // log('pubtolog', req.body)
-  log('publish to elastic...')
+  log('publish to elastic:', req.body)
 
+  if (req.body.msg) {
+    let docs = JSON.parse(req.body.msg)
+    log('[ LOGS ] - Recieved logs:', docs)
 
-  res.status(200).json('OK')
+    if (docs.length > 0) {
+    
+      if (docs.length === 1) {
+        elasticManager.insertDoc(docs[0])
+      } else {
+        elasticManager.bulkInsert(docs)
+      }
+
+    }
+  }
+
+  next()
 }
+
+// const requestLogs = () => {
+  //   log('[ LOGS ] - Requesting last log...')
+  //   return new Promise( async (resolve, reject) => {
+  
+  //     let docs = null
+  
+  //     let { status } = await healthCheck('http://localhost:5000/health') 
+  
+  //     if (!status) {
+  //       resolve(null)
+  //     }
+  
+  //     // if(!lastGoodTimestamp) {
+  //     //   const result = await elasticManager.getLastKnownTimestamp()
+  //     //   log('[ LOGS ] - Last Good Timestamp: ', result.timestamp)
+  //     //   lastGoodTimestamp = result.timestamp
+  //     // }
+    
+  
+  //     try {
+  //       logResponse = await request({ url: `${EVENTLOG_HOST}/retrieve/logs/${lastGoodTimestamp}` })
+  //       // logResponse = await request({ url: `${EVENTLOG_HOST}/retrieve/logs/1` })
+  //     }
+  
+  //     catch (err) {
+  //       resolve({
+  //         status: false,
+  //         err: err
+  //       })
+  //     }
+  
+  
+  //     if (logResponse) {
+  //       let docs = JSON.parse(logResponse)
+  //       log('[ LOGS ] - Recieved logs:', docs)
+  
+  //       if (docs.length > 0) {
+  //         const timestamps = docs.map(doc => {
+  //           let log = JSON.parse(doc)
+  //           return log.timestamp
+  //         })
+          
+  //        // console.log('timestamps', timestamps)
+  
+  //         // TODO: INSERT INTO ES
+  
+  //         if (docs.length === 1) {
+  //           elasticManager.insertDoc(docs[0])
+  //         } else {
+  //           elasticManager.bulkInsert(docs)
+  //         }
+  
+  //         lastGoodTimestamp = Math.max(...timestamps)
+  //         log('[ LOG ] - Setting last known good log timestamp:', lastGoodTimestamp)
+  //       }
+  //     }
+  
+  //   })
+  // }
 
 
 module.exports = {

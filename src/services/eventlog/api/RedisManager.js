@@ -83,12 +83,18 @@ class RedisManager {
   }
 
 
-  getFromTimestamp(key, timestamp) {
+  getAfterTimestamp (key, timestamp) {
     return new Promise( async (resolve, reject) => {
-      let logs = await this.zrange(key, timestamp, '-1', 'WITHSCORES')
+      let logs = await this.zrangebyscore([key, timestamp + 1, '+inf'])
       resolve(logs)
     })
   }
+
+
+  getLastValue (key) {
+    return this.zrange(key, -1, +1)
+  }
+
 
   quit () {
     this.subscribeClient.quit()

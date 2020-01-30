@@ -11,11 +11,19 @@ const {
   sendLogs } = require('./middleware');
 
 
+// TODO: not getting 200 back after sub
+
 router.post('/subscribe',
   jsonParser,
   checkMsgSchema,
   validateMsg,
-  subscribeToLog )
+  subscribeToLog,
+    (req, res) => {
+      res.status(200).json('OK')
+    } 
+  )
+
+
 
 
 router.post('/publish',
@@ -26,7 +34,7 @@ router.post('/publish',
 
 
 router.get('/retrieve/:key/:timestamp',
-  validateMsg,
+  // validateMsg,
   sendLogs )
 
 

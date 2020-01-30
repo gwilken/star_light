@@ -45,7 +45,7 @@ const validateMsg = (req, res, next) => {
 }
 
 
-const subscribeToLog = (req, res, next) => {
+const subscribeToLog = async (req, res, next) => {
   const { type, subscriber_url, subscriber_path } = req.body
 
   const failSubscribe = () => {
@@ -56,37 +56,42 @@ const subscribeToLog = (req, res, next) => {
     if (err) {
       log('[ EVENTLOG ] - Error: service unavailable, health check failed:', err)
       failSubscribe()
-    }
+    } 
+    
+    else if (healthRes.statusCode !== 200) {
+      failSubscribe()
+    } 
+    
+    else {
+      // TODO: wrap in promise
+      redisManager.subscribeToKey(type, async (event) => {
+        
+        redisManager.getLastValue(type)
 
-    if (healthRes) {
-      if (healthRes.statusCode !== 200) {
-        failSubscribe()
-      } else {
-        // log('[ EVENTLOG ] - Subscribe health check OK.')
-
-        redisManager.subscribeToKey(type, (event) => {
-          request({ 
-            url: `${subscriber_url}/${subscriber_path}`,
-            headers: { 'Authorization': req.headers.authorization },
-            method: 'POST',
-            json: true,
-            body: {
-              type,
-              event
-            }
-          }, (err, authRes) => {
-            if (err) {
-              failSubscribe()
-            } else if (authRes && authRes.statusCode == 200) {
-              next()
-            }
-          })
+        let msg = await redisManager.getLastValue(type)
+        
+        // console.log('val:', val)
+        
+        request({ 
+          url: `${subscriber_url}/${subscriber_path}`,
+          // headers: { 'Authorization': req.headers.authorization },
+          method: 'POST',
+          json: true,
+          body: {
+            type,
+            event,
+            msg
+          }
+        }, (err) => {
+          if (err) {
+            log('[ EVENTLOG ] - Error: reaching subscribed service:', err)
+          } 
         })
-      }
-    }
-  })
+      })
 
-  res.status(200).json('OK')
+      next()
+    } 
+  })
 }
 
 
@@ -100,8 +105,8 @@ const sendLogs = async (req, res, next) => {
   let { key, timestamp } = req.params
 
   console.log('[ EVENTLOG ] - req params:', key, timestamp)
-  
-  let logs = await redisManager.getFromTimestamp(key, timestamp)
+
+  let logs = await redisManager.getAfterTimestamp(key, timestamp)
   
   console.log('logs:', logs)
   
