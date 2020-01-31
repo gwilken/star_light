@@ -5,6 +5,8 @@ const log = require('./utils/log');
 const AUTH_PATH = process.env.AUTH_PATH || 'http://localhost:4000/verifytoken/'
 
 
+let subscribedSet = new Set()
+
 const checkMsgSchema = (req, res, next) => {
   const failValidation = () => {
     log('[ EVENTLOG ] - Message schema validation failed.')
@@ -45,6 +47,8 @@ const validateMsg = (req, res, next) => {
 }
 
 
+// TODO: check if previously subscribed. a set?
+
 const subscribeToLog = async (req, res, next) => {
   const { type, subscriber_url, subscriber_path } = req.body
 
@@ -63,41 +67,40 @@ const subscribeToLog = async (req, res, next) => {
     } 
     
     else {
-      // TODO: wrap in promise
-      redisManager.subscribeToKey(type, async (event) => {
-        
-        redisManager.getLastValue(type)
 
-        let msg = await redisManager.getLastValue(type)
-        
-        // console.log('val:', val)
-        
-        request({ 
-          url: `${subscriber_url}/${subscriber_path}`,
-          // headers: { 'Authorization': req.headers.authorization },
-          method: 'POST',
-          json: true,
-          body: {
-            type,
-            event,
-            msg
-          }
-        }, (err) => {
-          if (err) {
-            log('[ EVENTLOG ] - Error: reaching subscribed service:', err)
-          } 
+      if (subscribedSet.has(`${subscriber_url}/${subscriber_path}`)) {
+        log('[ EVENTLOG ] - Already subscribed.')
+        failSubscribe()
+      } else {
+        // TODO: wrap in promise
+        redisManager.subscribeToKey(type, async (event) => {
+          let msg = await redisManager.getLastValue(type)
+          
+          request({ 
+            url: `${subscriber_url}/${subscriber_path}`,
+            // headers: { 'Authorization': req.headers.authorization },
+            method: 'POST',
+            json: true,
+            body: { msg }
+          }, (err) => {
+            if (err) {
+              log('[ EVENTLOG ] - Error: reaching subscribed service:', err)
+            } 
+          })
         })
-      })
 
-      next()
+        subscribedSet.add(`${subscriber_url}/${subscriber_path}`)
+        
+        next()
+      }
     } 
   })
 }
 
-
-const publishToLog = (req, res, next) => {
-  redisManager.publishToSet(req.body)
-  res.status(200).json('OK')
+// TODO: error check here!
+const publishToLog = async (req, res, next) => {
+  await redisManager.publishToSet(req.body)
+  next()
 }
 
 

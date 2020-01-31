@@ -52,28 +52,20 @@ const validateMsg = (req, res, next) => {
 }
 
 
-
-
-
 const publishToElastic = (req, res, next) => {
-  // log('pubtolog', req.body)
-  log('publish to elastic:', req.body)
-
   if (req.body.msg) {
-    let docs = JSON.parse(req.body.msg)
-    log('[ LOGS ] - Recieved logs:', docs)
-
-    if (docs.length > 0) {
+    try {
+      let msg = JSON.parse(req.body.msg)
+      log('[ LOGS ] - Recieved log:', msg)
     
-      if (docs.length === 1) {
-        elasticManager.insertDoc(docs[0])
-      } else {
-        elasticManager.bulkInsert(docs)
+      if (msg) {
+        elasticManager.insertDoc(msg)
       }
-
+    }
+    catch (err) {
+      res.status(400).json('Bad Request')
     }
   }
-
   next()
 }
 

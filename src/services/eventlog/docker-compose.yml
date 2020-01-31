@@ -1,0 +1,6 @@
+version: '3'
+services:
+  eventlog_redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379

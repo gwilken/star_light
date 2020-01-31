@@ -1,0 +1,26 @@
+version: '3'
+services:
+  logs_elastic:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.1
+    environment:
+      - node.name=elastic-cluster
+      - cluster.initial_master_nodes=elastic-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - http.host=0.0.0.0
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9200:9200
+
+  logs_kibana:
+    image: docker.elastic.co/kibana/kibana:7.5.1
+    depends_on: 
+      - logs_elastic
+    environment: 
+      - ELASTICSEARCH_HOSTS=http://logs_elastic:9200
+    ports:
+      - 5601:5601

@@ -23,14 +23,15 @@ router.post('/subscribe',
     } 
   )
 
-
-
-
 router.post('/publish',
   jsonParser,
   checkMsgSchema,
   validateMsg,
-  publishToLog )
+  publishToLog,
+    (req, res) => {
+      res.status(200).json('OK')
+    }
+  )
 
 
 router.get('/retrieve/:key/:timestamp',

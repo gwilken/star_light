@@ -20,20 +20,15 @@ class ElasticManager {
       }
     })
 
-    // const body = dataset.flatMap(doc => [{ index: { _index: 'tweets' } }, doc])
-
     const { body: bulkResponse } = await this.client.bulk({ refresh: true, body })
   
     if (bulkResponse.errors) {
       console.log('ES bulk insert err:', bulkResponse.errors)
     }
-
-    console.log('es bulkresponse:', bulkResponse)
   }
 
   
   async insertDoc(body) {
-    log('[ LOGS ] - Inserting into Elastic.')
     await this.client.index({
       index: this.index,
       body

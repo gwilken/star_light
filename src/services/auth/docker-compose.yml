@@ -1,0 +1,12 @@
+version: '3'
+services:
+  auth_mongo:
+    image: mongo:4.2
+    command: mongod --bind_ip_all --port 27017
+    ports:
+      - 27017:27017
+
+  auth_mongo_seed:
+    build: ./mongo
+    depends_on:
+      - auth_mongo

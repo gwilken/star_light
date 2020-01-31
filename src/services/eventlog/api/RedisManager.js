@@ -46,7 +46,7 @@ class RedisManager {
 
 
   publishToSet(msg) {
-    this.zadd(msg.type, msg.timestamp, JSON.stringify(msg)  )
+    return this.zadd(msg.type, msg.timestamp, JSON.stringify(msg)  )
   }
 
 
@@ -92,7 +92,7 @@ class RedisManager {
 
 
   getLastValue (key) {
-    return this.zrange(key, -1, +1)
+    return this.zrange(key, -1, -1)
   }
 
 
