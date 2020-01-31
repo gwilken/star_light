@@ -13,14 +13,13 @@ const {
 
 router.post('/notify',
   jsonParser, 
-  // validateMsg
+  validateMsg,
   publishToElastic,
   (req, res) => {
     log('[ LOGS ] - Notify OK.')
     res.status(200).json('OK')
   } 
 )
-
 
 router.get('/health', (req, res) => {
     log('[ LOGS ] - Health check OK.', req.body)

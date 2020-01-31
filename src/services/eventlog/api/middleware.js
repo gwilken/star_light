@@ -78,7 +78,7 @@ const subscribeToLog = async (req, res, next) => {
           
           request({ 
             url: `${subscriber_url}/${subscriber_path}`,
-            // headers: { 'Authorization': req.headers.authorization },
+            headers: { 'Authorization': req.headers.authorization },
             method: 'POST',
             json: true,
             body: { msg }
