@@ -1,0 +1,20 @@
+{
+  "name": "star_light_gateway_api",
+  "version": "1.0.0",
+  "description": "Starlight logs service api",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "export NODE_ENV=development && nodemon server.js",
+    "build": "export NODE_ENV=production && nodemon server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "nodemon": "^2.0.2",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.8"
+  }
+}

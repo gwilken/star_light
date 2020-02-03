@@ -1,7 +1,13 @@
 version: '3'
 services:
-  
-  
+  gateway:
+    build: ./services/gateway/api
+    environment:
+      - EVENTLOG_PATH=http://eventlog:5000
+      - AUTH_PATH=http://auth:4000/verifytoken
+    ports:
+      - 7000:7000
+
   auth:
     build: ./services/auth/api
     depends_on:
@@ -86,3 +92,16 @@ services:
       - ELASTICSEARCH_HOSTS=http://logs_elastic:9200
     ports:
       - 5601:5601
+
+
+  influxdb:
+    image: influxdb:latest
+    ports:
+      - "8086:8086"
+
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+  
